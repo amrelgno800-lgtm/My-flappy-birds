@@ -55,18 +55,12 @@ jobs:
           ccache
         pip install --upgrade pip
         pip install Cython==0.29.33 wheel
-
     - name: Build with Buildozer
       run: |
-        # Forcefully bridge the missing system macros into the Python build cache
-        sudo mkdir -p /opt/hostedtoolcache/Python/3.10.20/x64/share/aclocal/
-        sudo cp /usr/share/aclocal/libtool.m4 /usr/share/aclocal/ltoptions.m4 /usr/share/aclocal/ltsugar.m4 /usr/share/aclocal/ltversion.m4 /usr/share/aclocal/lt~obsolete.m4 /opt/hostedtoolcache/Python/3.10.20/x64/share/aclocal/ 2>/dev/null || true
+        # Tell the compiler exactly where the missing system macros are located
+        export AC_LOCAL_PATH="/usr/share/aclocal"
+        export M4PATH="/usr/share/aclocal"
         
         pip install buildozer
         yes | buildozer android debug
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: game-apk
-        path: bin/*.apk
