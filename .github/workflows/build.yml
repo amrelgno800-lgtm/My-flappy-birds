@@ -1,22 +1,29 @@
-name: Build Android APK
-on: [push, pull_request]
+name: Build Android App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-data-cache: true
-        python-version: '3.10'
+        python-size: '3.10'
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
+        sudo apt-get install -y \
           build-essential \
           git \
           ffmpeg \
@@ -45,22 +52,24 @@ jobs:
           libncursesw5-dev \
           libffi-dev \
           uuid-dev \
+          libgomp1 \
+          openjdk-17-jdk \
           unzip \
           zip \
-          openjdk-17-jdk \
           autoconf \
           automake \
           libtool \
-          pkg-config \
-          ccache
-        pip install --upgrade pip
-        pip install Cython==0.29.33 wheel
+          pkg-config
+
     - name: Build with Buildozer
       run: |
-        # Tell the compiler exactly where the missing system macros are located
-        export AC_LOCAL_PATH="/usr/share/aclocal"
-        export M4PATH="/usr/share/aclocal"
+        # Start a silent background observer loop
+        # Every 1 second, it intercepts any 'm4' folder Buildozer generates
+        # and forcefully injects the required libtool macro file.
+        while true; do
+          find . -type d -name "m4" -exec cp /usr/share/aclocal/libtool.m4 {}/ \; 2>/dev/null || true
+          sleep 1
+        done &
         
         pip install buildozer
         yes | buildozer android debug
-
