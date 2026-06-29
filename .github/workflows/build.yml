@@ -24,64 +24,28 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          build-essential \
-          git \
-          ffmpeg \
-          libsdl2-dev \
-          libsdl2-image-dev \
-          libsdl2-mixer-dev \
-          libsdl2-ttf-dev \
-          libportmidi-dev \
-          libswscale-dev \
-          libavformat-dev \
-          libavcodec-dev \
-          zlib1g-dev \
-          libgstreamer1.0-dev \
-          gstreamer1.0-plugins-base \
-          gstreamer1.0-plugins-good \
-          libsqlite3-dev \
-          sqlite3 \
-          bzip2 \
-          libbz2-dev \
-          libssl-dev \
-          openssl \
-          libgdbm-dev \
-          libgdbm-compat-dev \
-          liblzma-dev \
-          libreadline-dev \
-          libncursesw5-dev \
-          libffi-dev \
-          uuid-dev \
-          libgomp1 \
-          openjdk-17-jdk \
-          unzip \
-          zip \
-          autoconf \
-          automake \
-          libtool \
-          pkg-config
+          build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
+          libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
+          libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
+          libgstreamer1.0-dev gstreamer1.0-plugins-base \
+          gstreamer1.0-plugins-good libsqlite3-dev sqlite3 bzip2 \
+          libbz2-dev libssl-dev openssl libgdbm-dev libgdbm-compat-dev \
+          liblzma-dev libreadline-dev libncursesw5-dev libffi-dev \
+          uuid-dev libgomp1 openjdk-17-jdk unzip zip autoconf automake \
+          libtool pkg-config libltdl-dev
 
     - name: Hijack Compilation Tools
       run: |
-        # 1. Create a hijacked version of 'aclocal'
         sudo tee /usr/local/bin/aclocal << 'EOF'
         #!/bin/bash
-        if [ -d "m4" ]; then
-          cp /usr/share/aclocal/libtool.m4 m4/
-        fi
+        if [ -d "m4" ]; then cp /usr/share/aclocal/libtool.m4 m4/ || true; fi
         exec /usr/bin/aclocal "$@"
         EOF
         sudo chmod +x /usr/local/bin/aclocal
-
-        # 2. Create a hijacked version of 'autoreconf'
         sudo tee /usr/local/bin/autoreconf << 'EOF'
         #!/bin/bash
-        if [ -d "m4" ]; then
-          cp /usr/share/aclocal/libtool.m4 m4/
-        fi
-        if [ -f "configure.ac" ]; then
-          echo "m4_pattern_allow([LT_SYS_SYMBOL_USCORE])" >> configure.ac
-        fi
+        if [ -d "m4" ]; then cp /usr/share/aclocal/libtool.m4 m4/ || true; fi
+        if [ -f "configure.ac" ]; then echo "m4_pattern_allow([LT_SYS_SYMBOL_USCORE])" >> configure.ac; fi
         exec /usr/bin/autoreconf "$@"
         EOF
         sudo chmod +x /usr/local/bin/autoreconf
@@ -89,4 +53,8 @@ jobs:
     - name: Build with Buildozer
       run: |
         pip install buildozer
+        # Set paths so the builder can find its own work
+        export LDFLAGS="-L/home/runner/work/My-flappy-birds/My-flappy-birds/.buildozer/android/platform/build-arm64-v8a/build/bootstrap_builds/sdl2/libs/arm64-v8a"
+        export CFLAGS="-I/home/runner/work/My-flappy-birds/My-flappy-birds/.buildozer/android/platform/build-arm64-v8a/build/bootstrap_builds/sdl2/jni/SDL/include"
+        
         yes | buildozer android debug
